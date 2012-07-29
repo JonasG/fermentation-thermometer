@@ -1,0 +1,12 @@
+application: temperature
+version: 2
+runtime: python27
+api_version: 1
+threadsafe: 1
+
+handlers:
+- url: /js
+  static_dir: js
+
+- url: /.*
+  script: rest_api.app
