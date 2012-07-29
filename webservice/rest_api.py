@@ -1,7 +1,13 @@
+import os
+
+import jinja2
 import webapp2
 
 from google.appengine.ext import db
 from google.appengine.api import users
+
+jinja_environment = jinja2.Environment(
+    loader = jinja2.FileSystemLoader(os.path.dirname(__file__)))
 
 class TemperatureReading(db.Model):
     temperature_celsius = db.FloatProperty()
@@ -13,78 +19,8 @@ def temperature_reading_key():
 class RestApi(webapp2.RequestHandler):
 
     def get(self):
-        result_html = '<html><head>'
-        result_html += '<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js" type="text/javascript"></script>'
-        result_html += '<script src="/js/highcharts.js" type="text/javascript"></script>'
-        
-        result_html += '<script type="text/javascript">\n'
-
-        # result_html += 'var temperatures = [24.0, 23.5, 23.3, 23.8];\n'
-        result_html += 'var temperatures = [];\n'
-
-        result_html += "$.getJSON('/rest.json', function(data) { \
-var items = []; \
-\
-$.each(data, function(key, val) { \
-    if (key == 'temperature_celsius')\
-    {\
-        temperatures.push(val);\
-    }\
-}); \
-\
-});"
-
-        result_html += "var timestamps = ['2012-07-28T12:00', '2012-07-28T12:01', '2012-07-28T12:02', '2012-07-28T12:03'];"
-
-        result_html += "var chart1; \
-        $(document).ready(function() { \
-chart1 = new Highcharts.Chart({ \
-chart: { \
-renderTo: 'container', \
-type: 'line' \
-}, \
-title: { \
-text: \
-'Temperature Readings' \
-}, \
-xAxis: \
-{ \
-categories: \
-['Apples', \
-'Bananas', \
-'Oranges'] \
-}, \
-yAxis: \
-{ \
-title: \
-{ \
-text: \
-'Fruit \
-eaten' \
-} \
-}, \
-series: \
-[{ \
-name: \
-'Jane', \
-data: temperatures \
-}, \
-{ \
-name: \
-'John', \
-data: \
-[5, \
-7, \
-3] \
-}] \
-}); \
-});"
-
-        result_html += '</script>'
-        
-        result_html += '</head><body>'
-        result_html += '<div id="container" style="width: 100%; height: 400px"></div>'
-        # result_html += '<table>'
+        template = jinja_environment.get_template('status.html')
+        self.response.out.write(template.render())
 
         temperature_readings = db.GqlQuery("SELECT * "
                                            "FROM TemperatureReading "
@@ -94,11 +30,6 @@ data: \
 
         # for entry in temperature_readings:
         # result_html += '<tr><td>' + str(entry.temperature_celsius) + '</td><td>' + str(entry.date) + '</td></tr>'
-
-        # result_html += '</table>'
-        result_html += '</body></html>'
-
-        self.response.out.write(result_html)
 
     def post(self):
         temperature_in_celsius = float(self.request.get('temperature',
@@ -110,7 +41,6 @@ data: \
 class RealRestApi(webapp2.RequestHandler):
 
     def get(self):
-
         temperature_readings = db.GqlQuery("SELECT * "
                                            "FROM TemperatureReading "
                                            "WHERE ANCESTOR IS :1 "
@@ -119,10 +49,10 @@ class RealRestApi(webapp2.RequestHandler):
 
         entry_strings = []
         for entry in temperature_readings:
-            entry_strings.append('{temperature_celsius: ' +
-                                 str(entry.temperature_celsius) + ', date: ' +
-                                 str(entry.date) + '}')
+            entry_strings.append('"' + str(entry.date) + '": ' +
+                                 str(entry.temperature_celsius))
 
-        self.response.out.write(', '.join(entry_strings))
+        self.response.content_type = 'application/json'
+        self.response.out.write('{' + ', '.join(entry_strings) + '}')
 
 app = webapp2.WSGIApplication([('/', RestApi), ('/rest.json', RealRestApi)], debug=True)

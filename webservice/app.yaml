@@ -2,7 +2,7 @@ application: temperature
 version: 2
 runtime: python27
 api_version: 1
-threadsafe: 1
+threadsafe: true
 
 handlers:
 - url: /js
@@ -10,3 +10,7 @@ handlers:
 
 - url: /.*
   script: rest_api.app
+
+libraries:
+- name: jinja2
+  version: "2.6"
