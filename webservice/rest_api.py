@@ -16,7 +16,7 @@ class TemperatureReading(db.Model):
 def temperature_reading_key():
     return db.Key.from_path('Temperature', 'default_temperature_readings')
 
-class RestApi(webapp2.RequestHandler):
+class WebPage(webapp2.RequestHandler):
 
     def get(self):
         template = jinja_environment.get_template('status.html')
@@ -28,31 +28,29 @@ class RestApi(webapp2.RequestHandler):
                                            "ORDER BY date DESC",
                                            temperature_reading_key())
 
-        # for entry in temperature_readings:
-        # result_html += '<tr><td>' + str(entry.temperature_celsius) + '</td><td>' + str(entry.date) + '</td></tr>'
-
     def post(self):
         temperature_in_celsius = float(self.request.get('temperature',
-                                                 default_value=0.0))
+                                                        default_value=0.0))
         temperature_reading = TemperatureReading(parent=temperature_reading_key())
         temperature_reading.temperature_celsius = temperature_in_celsius
         temperature_reading.put()
 
-class RealRestApi(webapp2.RequestHandler):
+class RestApi(webapp2.RequestHandler):
 
     def get(self):
-        temperature_readings = db.GqlQuery("SELECT * "
-                                           "FROM TemperatureReading "
-                                           "WHERE ANCESTOR IS :1 "
-                                           "ORDER BY date ASC LIMIT 10",
-                                           temperature_reading_key())
+        temperature_readings_last_two_days = db.GqlQuery("SELECT * "
+                                                         "FROM TemperatureReading "
+                                                         "WHERE ANCESTOR IS :1 "
+                                                         "ORDER BY date ASC LIMIT 96",
+                                                         temperature_reading_key())
 
         entry_strings = []
-        for entry in temperature_readings:
+        for entry in temperature_readings_last_two_days:
             entry_strings.append('"' + str(entry.date) + '": ' +
                                  str(entry.temperature_celsius))
 
         self.response.content_type = 'application/json'
         self.response.out.write('{' + ', '.join(entry_strings) + '}')
 
-app = webapp2.WSGIApplication([('/', RestApi), ('/rest.json', RealRestApi)], debug=True)
+app = webapp2.WSGIApplication([('/', WebPage), ('/rest.json', RestApi)],
+                              debug=False)
