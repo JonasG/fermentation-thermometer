@@ -44,7 +44,7 @@ class RealRestApi(webapp2.RequestHandler):
         temperature_readings = db.GqlQuery("SELECT * "
                                            "FROM TemperatureReading "
                                            "WHERE ANCESTOR IS :1 "
-                                           "ORDER BY date DESC LIMIT 10",
+                                           "ORDER BY date ASC LIMIT 10",
                                            temperature_reading_key())
 
         entry_strings = []
