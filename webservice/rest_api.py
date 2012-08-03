@@ -5,6 +5,7 @@ import webapp2
 
 from google.appengine.ext import db
 from google.appengine.api import users
+from google.appengine.ext.db import stats
 
 jinja_environment = jinja2.Environment(
     loader = jinja2.FileSystemLoader(os.path.dirname(__file__)))
@@ -38,10 +39,15 @@ class WebPage(webapp2.RequestHandler):
 class RestApi(webapp2.RequestHandler):
 
     def get(self):
+        readings_count = TemperatureReading.all().count()
+        display_count = 96
+
         temperature_readings_last_two_days = db.GqlQuery("SELECT * "
                                                          "FROM TemperatureReading "
                                                          "WHERE ANCESTOR IS :1 "
-                                                         "ORDER BY date ASC LIMIT 96",
+                                                         "ORDER BY date ASC "
+                                                         "LIMIT " + str(display_count) + " "
+                                                         "OFFSET " + str(max(0, readings_count - display_count)),
                                                          temperature_reading_key())
 
         entry_strings = []
