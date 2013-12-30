@@ -39,15 +39,13 @@ class WebPage(webapp2.RequestHandler):
 class RestApi(webapp2.RequestHandler):
 
     def get(self):
-        readings_count = TemperatureReading.all().count()
         display_count = 96
 
         temperature_readings_last_two_days = db.GqlQuery("SELECT * "
                                                          "FROM TemperatureReading "
                                                          "WHERE ANCESTOR IS :1 "
-                                                         "ORDER BY date ASC "
-                                                         "LIMIT " + str(display_count) + " "
-                                                         "OFFSET " + str(max(0, readings_count - display_count)),
+                                                         "ORDER BY date DESC "
+                                                         "LIMIT " + str(display_count),
                                                          temperature_reading_key())
 
         entry_strings = []
@@ -56,7 +54,7 @@ class RestApi(webapp2.RequestHandler):
                                  str(entry.temperature_celsius))
 
         self.response.content_type = 'application/json'
-        self.response.out.write('{' + ', '.join(entry_strings) + '}')
+        self.response.out.write('{' + ', '.join(reversed(entry_strings)) + '}')
 
 app = webapp2.WSGIApplication([('/', WebPage), ('/rest.json', RestApi)],
                               debug=False)
