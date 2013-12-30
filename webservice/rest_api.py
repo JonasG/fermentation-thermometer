@@ -50,7 +50,8 @@ class RestApi(webapp2.RequestHandler):
 
         entry_strings = []
         for entry in temperature_readings_last_two_days:
-            entry_strings.append('"' + str(entry.date) + '": ' +
+            formatted_date = entry.date.strftime("%Y-%m-%d %H-%M-%S")
+            entry_strings.append('"' + formatted_date + '": ' +
                                  str(entry.temperature_celsius))
 
         self.response.content_type = 'application/json'
